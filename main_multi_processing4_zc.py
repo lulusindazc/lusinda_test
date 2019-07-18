@@ -156,7 +156,7 @@ def preprocess(img):
 
 global save_box_no
 save_box_no = 0
-def reid_draw(frame, b_b, model, cfg, huojia1_id, pre_res):
+def reid_draw(frame, b_b, model, cfg, huojia1_id, pre_res,change_idnum):
     global size
     global save_box_no
     id_name = 0
@@ -208,13 +208,14 @@ def reid_draw(frame, b_b, model, cfg, huojia1_id, pre_res):
     rentidir = '/home/tujh/renti/'
     # pkl_file = open('/data/reid/renti/data.pkl', 'rb')
     # shujuku = pickle.load(pkl_file)
-    pre_item_huoid={}
-    for id_name, pre_item in pre_res.items():
-        if huojia1_id == pre_item[-1]:
-            pre_item_huoid[id_name]=pre_item ##person id in front of huojia_id
+    # pre_item_huoid={}
+    # for id_name, pre_item in pre_res.items():
+    #     if huojia1_id == pre_item[-1]:
+    #         pre_item_huoid[id_name]=pre_item ##person id in front of huojia_id
 
-    if len(pre_res) == len(shujuku) and pre_item_huoid:
-        id_name = reid_draw_multi(pre_item_huoid, b_b)
+    if change_idnum:#len(pre_res) == len(shujuku) and pre_item_huoid:
+        id_name = reid_draw_multi(pre_res, b_b)
+        pre_fix = 'B:'
     else:
         # for feature2,filename in shujuku:
         for query in shujuku:
@@ -223,9 +224,9 @@ def reid_draw(frame, b_b, model, cfg, huojia1_id, pre_res):
                 if minsim > distan or minsim == -1:
                     minsim = distan
                     id_name = int(query)
-
+        pre_fix='R:'
     cv2.rectangle(frame, (left, top), (right, bottom), (255, 0, 0), 2)
-    cv2.putText(frame, str(id_name), (left, top), cv2.FONT_HERSHEY_COMPLEX, 6, (255, 0, 0), 2)
+    cv2.putText(frame, pre_fix+str(id_name), (left, top), cv2.FONT_HERSHEY_COMPLEX, 6, (255, 0, 0), 2)
     cv2.imwrite('/home/zhaocy/yhr/tmp_imgs/' + str(save_box_no) + '_' + str(id_name) + '.jpg', img1)
     save_box_no += 1
 
@@ -305,9 +306,10 @@ def initial_flag_out(left, top, right, bottom, shelfid):
 
 def xuanze_original(res, frame, model, cfg, camera_id, dic_change, huojia1_id,pre_res):
     dic = {}
+    change_idnum = len(pre_res.keys()) == len(res)
     if len(res) == 1:
         result = res[0]
-        left, top, right, bottom, id_name = reid_draw(frame, result, model, cfg, huojia1_id,pre_res)
+        left, top, right, bottom, id_name = reid_draw(frame, result, model, cfg, huojia1_id,pre_res,change_idnum)
         if id_name == 999:
             None
         else:
@@ -325,7 +327,7 @@ def xuanze_original(res, frame, model, cfg, camera_id, dic_change, huojia1_id,pr
         for item in res:
             result = item
             if (len(result) > 0):
-                left, top, right, bottom, id_name = reid_draw(frame, result, model, cfg, huojia1_id,pre_res)
+                left, top, right, bottom, id_name = reid_draw(frame, result, model, cfg, huojia1_id,pre_res,change_idnum)
                 if id_name == 999:
                     None
                 else:
@@ -365,11 +367,12 @@ in_out_moments_count = 0
 def xuanze(res, frame, model, cfg, threadPubMsg_dict, camera_id, dic, change_dic,
            huojia1_id, frame_trans,pre_res):
     global in_out_moments_count
+    change_idnum = len(pre_res.keys()) == len(res)
     for item in res:
         result = item
         # add new person
         if (len(result) > 0):
-            left, top, right, bottom, id_name = reid_draw(frame, result, model, cfg, huojia1_id,pre_res)
+            left, top, right, bottom, id_name = reid_draw(frame, result, model, cfg, huojia1_id,pre_res,change_idnum)
             if id_name == 999:
                 None
             else:
@@ -515,10 +518,11 @@ def callback(param_tuple):  # param_tuple
 
     # get the max rectangle
     result = []
+    change_idnum = len(pre_res.keys()) == len(res)
     for item in res:
         result = item
         if (len(result) > 0):
-            left, top, right, bottom, id_name = reid_draw(frame, result, model, cfg, huojia1_id, pre_res)
+            left, top, right, bottom, id_name = reid_draw(frame, result, model, cfg, huojia1_id, pre_res,change_idnum)
             dict_res[id_name] = [left, top, right, bottom, huojia1_id]
 
     cv2.imshow('Cam2', cv2.resize(frame, (int(512 * wh_ratio), 512)))
